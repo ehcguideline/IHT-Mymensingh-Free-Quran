@@ -1,1 +1,170 @@
 
+<!doctype html>
+
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>IHT Mymensingh</title>
+  <style>
+    :root{--bg:#f1f3f4;--card:#fff;--accent:#1a73e8;--muted:#6b7280}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{background:linear-gradient(180deg,#e8f0fe 0%,var(--bg) 60%);display:flex;align-items:flex-start;justify-content:center;padding:40px}
+    .container{width:100%;max-width:760px}
+    .header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    .logo{width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#1765c1);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+    .title{font-size:20px;margin:0}
+    .subtitle{margin:0;color:var(--muted);font-size:13px}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 6px 24px rgba(16,24,40,0.08);padding:22px}
+    label{display:block;font-weight:600;margin-bottom:6px}
+    .hint{font-size:13px;color:var(--muted);margin-bottom:12px}
+    input[type="text"], select{width:100%;padding:12px;border-radius:8px;border:1px solid #e6e9ee;font-size:15px;outline:none}
+    input[type="text"]:focus, select:focus{box-shadow:0 0 0 4px rgba(26,115,232,0.08);border-color:var(--accent)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .actions{display:flex;gap:10px;align-items:center;margin-top:16px}
+    button{padding:10px 14px;border-radius:8px;border:0;font-weight:600;cursor:pointer}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-ghost{background:transparent;border:1px solid #e6e9ee}
+    .small{font-size:13px;color:var(--muted)}
+    .responses{margin-top:18px}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:8px;border-bottom:1px solid #f1f3f5;text-align:left}
+    .note{font-size:13px;color:#b91c1c;margin-top:8px}
+    .required-star{color:#d00;margin-left:4px}
+    @media(max-width:540px){.row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">IHT</div>
+      <div>
+        <h1 class="title">আইএইচটি ময়মনসিংহ ফ্রি কুরআন বিতরন</h1>
+        <p class="subtitle">IHT Mymensingh — সাবমিশন ফর্ম (Google Forms মত ডিজাইন)</p>
+      </div>
+    </div><div class="card" role="main">
+  <form id="ihtForm" autocomplete="off">
+    <div>
+      <label for="name">Name <span class="required-star">*</span></label>
+      <div class="hint">*Name বক্সে লিখতে হবে*</div>
+      <input id="name" name="name" type="text" placeholder="আপনার পুরো নাম লিখুন" required />
+    </div>
+
+    <div style="margin-top:14px">
+      <label for="department">Department</label>
+      <select id="department" name="department" required>
+        <option value="">— Department নির্বাচন করুন —</option>
+        <option value="Lab Medicine">1/ Lab Medicine</option>
+        <option value="Radiography">2/ Radiography</option>
+      </select>
+    </div>
+
+    <div style="margin-top:14px">
+      <label for="batch">Batch</label>
+      <select id="batch" name="batch" required>
+        <option value="">— Batch নির্বাচন করুন —</option>
+        <option value="1st">1/ 1st</option>
+        <option value="2nd">2/ 2nd</option>
+        <option value="3rd">3/ 3rd</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn-primary">Submit</button>
+      <button type="button" id="clearBtn" class="btn-ghost">Clear</button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button type="button" id="viewBtn" class="btn-ghost">View Responses</button>
+        <button type="button" id="downloadBtn" class="btn-ghost">Download CSV</button>
+      </div>
+    </div>
+  </form>
+
+  <div id="message" class="small" style="margin-top:12px"></div>
+
+  <div id="responsesArea" class="responses" hidden>
+    <h3 style="margin:0 0 8px 0">Responses</h3>
+    <table id="respTable" aria-live="polite">
+      <thead>
+        <tr><th>#</th><th>Name</th><th>Department</th><th>Batch</th><th>Time</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+</div>
+
+<p class="small" style="margin-top:12px">Note: এই ফর্মটি ব্রাউজারে লোকালি ডাটায় জমা রাখে। সাবমিশন সার্ভারে পাঠাতে চাইলে আমাকে বলো — EmailJS বা সার্ভার-সাইড কনফিগারেশন যোগ করে দিব।</p>
+
+  </div>  <script>
+    (function(){
+      const form = document.getElementById('ihtForm');
+      const msg = document.getElementById('message');
+      const responses = [];
+      const respArea = document.getElementById('responsesArea');
+      const respTableBody = document.querySelector('#respTable tbody');
+
+      function formatTime(d){
+        return new Date(d).toLocaleString('bn-BD', {hour12:false});
+      }
+
+      function renderResponses(){
+        respTableBody.innerHTML = '';
+        responses.forEach((r,i)=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.department)}</td><td>${escapeHtml(r.batch)}</td><td>${escapeHtml(formatTime(r.time))}</td>`;
+          respTableBody.appendChild(tr);
+        });
+      }
+
+      function escapeHtml(s){
+        return String(s).replace(/[&<>\"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+      }
+
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        const name = form.name.value.trim();
+        const department = form.department.value;
+        const batch = form.batch.value;
+        if(!name){ msg.textContent = 'Name অবশ্যই দিতে হবে।'; msg.className='note'; return; }
+        if(!department){ msg.textContent = 'দয়া করে Department নির্বাচন করুন।'; msg.className='note'; return; }
+        if(!batch){ msg.textContent = 'দয়া করে Batch নির্বাচন করুন।'; msg.className='note'; return; }
+
+        const entry = {name, department, batch, time: Date.now()};
+        responses.push(entry);
+        msg.textContent = 'ধন্যবাদ — আপনার সাবমিশন গ্রহণ করা হলো।'; msg.className='small';
+        form.reset();
+        renderResponses();
+        // keep responses in localStorage so page reload keeps them
+        localStorage.setItem('iht_responses', JSON.stringify(responses));
+      });
+
+      document.getElementById('clearBtn').addEventListener('click', function(){
+        if(confirm('ফর্মের সব ইনপুট ক্লিয়ার করবে?')) form.reset();
+      });
+
+      document.getElementById('viewBtn').addEventListener('click', function(){
+        respArea.hidden = !respArea.hidden;
+        if(!respArea.hidden) { renderResponses(); }
+      });
+
+      document.getElementById('downloadBtn').addEventListener('click', function(){
+        if(responses.length===0){ alert('কোনো রেসপন্স নেই ডাউনলোড করার জন্য।'); return; }
+        const header = ['#','Name','Department','Batch','Time'];
+        const rows = responses.map((r,i)=>[i+1, r.name, r.department, r.batch, new Date(r.time).toISOString()]);
+        const csvContent = [header, ...rows].map(r=>r.map(cell=> '"'+String(cell).replace(/"/g,'""')+'"').join(',')).join('\n');
+        const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'iht_responses.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
+      // load from localStorage on start
+      try{
+        const saved = localStorage.getItem('iht_responses');
+        if(saved){ const parsed = JSON.parse(saved); if(Array.isArray(parsed)){ parsed.forEach(p=>responses.push(p)); }
+          if(responses.length>0) renderResponses();
+        }
+      }catch(e){ console.warn(e); }
+
+    })();
+  </script></body>
+</html>
